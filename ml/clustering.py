@@ -5,7 +5,7 @@ import sklearn.cluster as skc
 
 import numpy as np
 
-from ..math_utils.geometry import PointSet, Rangemeter
+from math.geometry import PointSet, Rangemeter
 
 
 class Clustering(ABC):

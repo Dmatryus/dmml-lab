@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from dateutil.relativedelta import relativedelta
 from pandas import DatetimeIndex
-from ..statistic.stat_box import WeightedMean, Std
+from math.stat_box import WeightedMean, Std
 
 from fast_enum import FastEnum
 
