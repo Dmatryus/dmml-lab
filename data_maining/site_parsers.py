@@ -48,15 +48,13 @@ class AvitoParser:
         times = tree.xpath("//div[@data-marker='catalog-serp']//div[@data-marker='item-date']")
         items = zip(titles, prices, times)
         items = [i for i in items]
-        json_items = []
-        for title, price, time in items:
-            json_items.append({
+        json_items = [{
                 'title': title.get('title'),
                 'url': title.get('href'),
                 'price': price.get('content'),
                 'time': time.text,
                 'noticed': datetime.now()
-            })
+            } for title, price, time in items]
         return pd.DataFrame(json_items)
 
     def search(self, city: str, category: str, request_: str, price_from: int = None, price_to: int = None):
