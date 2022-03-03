@@ -1,6 +1,72 @@
 {
-  "driver": "MySQL",
-  "host": "host",
-  "user": "user",
-  "password": "password"
+  "driver_config": {
+    "driver": "MySQL",
+    "host": "host",
+    "user": "user",
+    "password": "password"
+  },
+  "query_config": {
+    "fields_mapping": {
+      "id": "rfv.id",
+      "created_on": "rfv.created_on",
+      "decision": "rfv.status",
+      "valuation_type": "rp.dtype",
+      "exception_type": "vr.exceptional_reason",
+      "company_title": "comp.title",
+      "company_id": "comp.id",
+      "expert_status": "eresp.status",
+      "wrong_req_type": "eresp.expert_wrong_request_type",
+      "is_request_invalid": "eresp.is_request_invalid",
+      "total_space": "rp.total_space",
+      "report_price": "rfv.report_price / rp.total_space",
+      "price": "vr.price / rp.total_space",
+      "expert_price": "eresp.price / rp.total_space",
+      "deviation": "vr.deviation * 100",
+      "abs_deviation": "abs(vr.deviation) * 100",
+      "region_title": "r.fias_title",
+      "region_shortname": "r.element_type",
+      "region_code": "r.code",
+      "city_shortname": "c.element_type",
+      "city_title": "c.fias_title",
+      "city_id": "c.fias_id",
+      "street_id": "s.fias_id",
+      "street_title": "s.fias_title",
+      "house_number": "rp.house_number",
+      "lat": "rp.lat",
+      "lon": "rp.lon",
+      "rooms": "rp.rooms",
+      "repairs": "rp.repairs",
+      "repairs_new_gradation": "(SELECT CASE rp.qualified_repairs_state WHEN 'WITHOUT_REPAIRS' THEN 'needsCapital' WHEN 'SIMPLE' THEN 'needsCosmetic' WHEN 'PREPARED' THEN 'finishing' WHEN 'GOOD' THEN 'good' WHEN 'EURO' THEN 'evro' WHEN 'EXCELLENT' THEN 'excellent' END)",
+      "floor": "rp.floor",
+      "storeys": "rp.storeys",
+      "walls": "(SELECT CASE rp.walls WHEN 0 THEN 'panel' WHEN 1 THEN 'kirpich' WHEN 2 THEN 'wooden' WHEN 3 THEN 'monolith' WHEN 5 THEN 'monolithKirpich' WHEN 4 THEN 'block' END)",
+      "built_year": "year(rp.build_date)",
+      "from_ba": "ir.from_ba"
+    },
+    "tables": {
+      "request_for_valuation": {
+        "short": "rfv",
+        "joines": {
+          "residential_property": "JOIN residential_property rp on rp.id = rfv.realty_id",
+          "valuation_result": "LEFT JOIN valuation_result vr on vr.id = rfv.id",
+          "income_report": "LEFT JOIN income_report ir on ir.valuation_request_id = rfv.id",
+          "company": "JOIN company comp on comp.id = rfv.company_id",
+          "expert_request": "left join expert_request erq on erq.id = rfv.id"
+        }
+      },
+      "residential_property": {
+        "short": "rp",
+        "joines": {
+          "city": "JOIN city c on c.fias_id = rp.city_fiasId",
+          "street": "JOIN street s on s.fias_id = rp.street_fiasId"
+        },
+        "expert_request": {
+          "short": "erq",
+          "joines": {
+            "expert_response": "left join expert_response eresp on eresp.id = erq.expert_response_id"
+          }
+        }
+      }
+    }
+  }
 }
