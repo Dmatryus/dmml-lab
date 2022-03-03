@@ -1,5 +1,5 @@
 {
-  "Driver": "MySQL",
+  "driver": "MySQL",
   "host": "host",
   "user": "user",
   "password": "password"
