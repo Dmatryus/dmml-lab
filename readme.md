@@ -1,9 +1,9 @@
-# Welcome to Stat Box 👋
+# Welcome to DmML-Lab 👋
 
 ![Version](https://img.shields.io/badge/version-0.0.0-blue.svg?cacheSeconds=2592000)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://gitlab.com/dmatryus.sqrt49/dmml-lab/-/blob/main/LICENSE)
 
-> A low-code python utility for fast statistics collection
+> Short description
 
 ## Install
 
