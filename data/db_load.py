@@ -1,8 +1,8 @@
 # Copyright © 2022 Dmity Bulychev. Contacts: dmatryus.sqrt49@yandex.ru
 # License: http://opensource.org/licenses/MIT
+
 import json
 from abc import ABC, abstractmethod
-from enum import Enum
 from pathlib import Path
 from typing import Union, Dict, Tuple
 

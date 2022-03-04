@@ -1,7 +1,7 @@
 # Welcome to Stat Box 👋
 
 ![Version](https://img.shields.io/badge/version-0.0.0-blue.svg?cacheSeconds=2592000)
-[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-yellow.svg)](https://gitlab.com/dmatryus.sqrt49/stat_box/-/blob/b6399bd3cc0f3282c2a54bc9b8952456723ccada/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://gitlab.com/dmatryus.sqrt49/dmml-lab/-/blob/main/LICENSE)
 
 > A low-code python utility for fast statistics collection
 
@@ -37,7 +37,7 @@ code
 
 Contributions, issues and feature requests are welcome!
 
-Feel free to check [issues page](https://gitlab.com/dmatryus.sqrt49/stat_box/-/issues). PRs are welcome!
+Feel free to check [issues page](https://gitlab.com/dmatryus.sqrt49/dmml-lab/-/issues). PRs are welcome!
 
 ## Show your support
 
@@ -45,10 +45,10 @@ Give a ⭐️ if this project helped you!
 
 ## 📝 License
 
-Copyright © 2021 [dmatryus](https://github.com/dmatryus.sqrt49).
+Copyright © 2021 [dmatryus](https://gitlab.com/dmatryus.sqrt49).
 
 This project
-is [GPLv3](https://gitlab.com/dmatryus.sqrt49/stat_box/-/blob/b6399bd3cc0f3282c2a54bc9b8952456723ccada/LICENSE)
+is [MIT](https://gitlab.com/dmatryus.sqrt49/dmml-lab/-/blob/main/LICENSE)
 licensed.
 
 ***
