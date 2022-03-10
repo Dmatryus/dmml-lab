@@ -93,7 +93,7 @@ class Rangemeter:
     def _get_function(self, func: str):
         return self.norm
 
-    def __init__(self, func: str = 'squared'):
+    def __init__(self, func: str = "squared"):
         self.__func = func
         self._function = self.norm
 

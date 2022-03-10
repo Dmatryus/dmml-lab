@@ -2,22 +2,24 @@ from setuptools import setup, find_packages
 from os.path import join, dirname
 
 try:
-    with open(join(dirname(__file__), 'readme.md')) as fh:
+    with open(join(dirname(__file__), "readme.md")) as fh:
         long_description = fh.read()
 except:
-    long_description = 'Convinient statistical description of dataframes and time series.'
+    long_description = (
+        "Convinient statistical description of dataframes and time series."
+    )
 
 setup(
-    name="stat_box",
+    name="dmml-lab",
     packages=find_packages(),
-    version="0.1.1-1",
-    license="GPLv3",
-    description="Convinient statistical description of dataframes and time series.",
+    version="0.0a0",
+    license="MIT",
+    description="",
     author="dmatryus",
     author_email="dmatryus.sqrt49@yandex.ru",
     long_description=long_description,
-    long_description_content_type='text/markdown',
-    url="https://gitlab.com/dmatryus.sqrt49/stat_box",
+    long_description_content_type="text/markdown",
+    url="https://gitlab.com/dmatryus.sqrt49/dmml-lab",
     keywords=["STATICS", "TIME_SERIES"],
-    install_requires=["numpy", "scipy", "pandas", "matplotlib"],
+    install_requires=["numpy", "scipy", "pandas", "matplotlib", "pymysql"],
 )

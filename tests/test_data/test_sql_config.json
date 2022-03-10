@@ -59,12 +59,12 @@
         "joines": {
           "city": "JOIN city c on c.fias_id = rp.city_fiasId",
           "street": "JOIN street s on s.fias_id = rp.street_fiasId"
-        },
-        "expert_request": {
-          "short": "erq",
-          "joines": {
-            "expert_response": "left join expert_response eresp on eresp.id = erq.expert_response_id"
-          }
+        }
+      },
+      "expert_request": {
+        "short": "erq",
+        "joines": {
+          "expert_response": "left join expert_response eresp on eresp.id = erq.expert_response_id"
         }
       }
     }

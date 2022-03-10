@@ -7,9 +7,11 @@ from data.db_load import SqlLoader
 
 
 def test_init_by_path():
-    loader = SqlLoader(path_to_config=Path(__file__).parent / 'test_data' / 'test_sql_config.json')
+    loader = SqlLoader(
+        path_to_config=Path(__file__).parent / "test_data" / "test_sql_config.json"
+    )
     print(loader)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_init_by_path()

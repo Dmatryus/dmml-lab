@@ -50,7 +50,9 @@ class SimplexBlackHole(Clustering):
             new_clusters = []
             if self.analysis_mode:
                 range_map = {-1: 0, -2: 0}
-                temp_distances = {k: black_hole_vector[k] for k in range(1, len(black_hole_vector))}
+                temp_distances = {
+                    k: black_hole_vector[k] for k in range(1, len(black_hole_vector))
+                }
                 sorted_points = sorted(temp_distances.items(), key=lambda kv: kv[1])
                 prev_point = sorted_points[0][1]
                 for key, point in sorted_points[1:]:
@@ -87,7 +89,7 @@ class SimplexBlackHole(Clustering):
         self.epochs = []
         for d in self.distances:
             clusters = black_hole_filter(d)
-            print('clusters', len(clusters))
+            print("clusters", len(clusters))
             _save_epoch()
         if self.analysis_mode:
             return self.epochs[-1]
@@ -97,7 +99,6 @@ class SimplexBlackHole(Clustering):
 
 
 class DBSCAN(Clustering):
-
     def init_meta(self, **kwargs):
         self._meta = skc.DBSCAN(eps=self.epsilon, min_samples=self.min_points, **kwargs)
 
@@ -122,12 +123,23 @@ class DBSCAN(Clustering):
 
 class Hierarchical(Clustering):
     def init_meta(self, **kwargs):
-        self._meta = skc.AgglomerativeClustering(n_clusters=self.n_clusters, affinity=self.affinity,
-                                                 linkage=self.linkage, distance_threshold=self.distance_threshold,
-                                                 **kwargs)
+        self._meta = skc.AgglomerativeClustering(
+            n_clusters=self.n_clusters,
+            affinity=self.affinity,
+            linkage=self.linkage,
+            distance_threshold=self.distance_threshold,
+            **kwargs
+        )
 
-    def __init__(self, n_clusters=None, affinity="euclidean", linkage='ward', distance_threshold=None,
-                 analysis_mode=False, **kwargs):
+    def __init__(
+        self,
+        n_clusters=None,
+        affinity="euclidean",
+        linkage="ward",
+        distance_threshold=None,
+        analysis_mode=False,
+        **kwargs
+    ):
         super().__init__(analysis_mode)
         self.n_clusters = n_clusters
         self.affinity = affinity

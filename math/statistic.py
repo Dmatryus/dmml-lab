@@ -37,8 +37,10 @@ def _prepare_time_values(time_values, series_len: int):
     elif len(time_values) == series_len:
         return time_values
     else:
-        warnings.warn("Time values size is not equal to series size.\n"
-                      "Range will be used as time values.")
+        warnings.warn(
+            "Time values size is not equal to series size.\n"
+            "Range will be used as time values."
+        )
         return range(time_values)
 
 
@@ -361,10 +363,10 @@ class Extremum(Statistic):
         elif self.mode == "max_count":
             max_ = argrelextrema(series.values, np.greater)[0]
             return len(max_)
-        elif self.mode == 'global_min':
+        elif self.mode == "global_min":
             min_ = argrelextrema(series.values, np.les)[0]
             return min_.min()
-        elif self.mode == 'global_max':
+        elif self.mode == "global_max":
             max_ = argrelextrema(series.values, np.greater)[0]
             return max_.max()
         else:
@@ -379,7 +381,7 @@ class Trend(Statistic):
     Series linear trend
     """
 
-    def __init__(self, time_values: pd.Series = None, value: str = 'percent'):
+    def __init__(self, time_values: pd.Series = None, value: str = "percent"):
         """
         :param time_values: time series or ordered sequence
         :param value: returned value
@@ -394,13 +396,13 @@ class Trend(Statistic):
     def calculate(self, series: pd.Series):
         t = _prepare_time_values(self.time_values, len(series))
         lr_function = np.poly1d(np.polyfit(t, series.values, 1))
-        if self.value == 'percent':
+        if self.value == "percent":
             return (lr_function(t.iloc[-1]) - series.iloc[0]) / series.iloc[0] * 100
-        elif self.value == 'fraction':
+        elif self.value == "fraction":
             return (lr_function(t.iloc[-1]) - series.iloc[0]) / series.iloc[0]
-        elif self.value == 'dif':
+        elif self.value == "dif":
             return lr_function(t.iloc[-1]) - series.iloc[0]
-        elif self.value == 'value':
+        elif self.value == "value":
             return lr_function(t.iloc[-1])
 
     def str_key(self) -> str:
@@ -424,7 +426,7 @@ class Integral(Statistic):
         return np.trapz(series, t)
 
     def str_key(self) -> str:
-        return 'integral'
+        return "integral"
 
 
 class StatisticSet:
@@ -450,7 +452,7 @@ class StatisticSet:
         return {stat.str_key(): stat.calculate(series) for stat in self.stat_set}
 
     def stat_table(
-            self, df: pd.DataFrame, columns: Iterable[str] = None
+        self, df: pd.DataFrame, columns: Iterable[str] = None
     ) -> pd.DataFrame:
         """
         Calculating stat_box from a table

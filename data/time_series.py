@@ -18,13 +18,14 @@ class TimeSeriesTypes(FastEnum):
     """
     Types of tame series
     """
-    INDEX: 'TimeSeriesTypes' = 'index'
-    GROUP: 'TimeSeriesTypes' = 'group'
-    ROLLING: 'TimeSeriesTypes' = 'rolling'
-    DIFF: 'TimeSeriesTypes' = 'diff'
-    LINEAR_TREND: 'TimeSeriesTypes' = 'linear_trend'
-    EXP_1: 'TimeSeriesTypes' = 'exp1'
-    EXP_2: 'TimeSeriesTypes' = 'exp2'
+
+    INDEX: "TimeSeriesTypes" = "index"
+    GROUP: "TimeSeriesTypes" = "group"
+    ROLLING: "TimeSeriesTypes" = "rolling"
+    DIFF: "TimeSeriesTypes" = "diff"
+    LINEAR_TREND: "TimeSeriesTypes" = "linear_trend"
+    EXP_1: "TimeSeriesTypes" = "exp1"
+    EXP_2: "TimeSeriesTypes" = "exp2"
 
 
 class TimeSeries:
@@ -32,8 +33,9 @@ class TimeSeries:
     Base class of time series
     """
 
-    def __init__(self, data: pd.DataFrame,
-                 type_: TimeSeriesTypes = None, type_params=None):
+    def __init__(
+        self, data: pd.DataFrame, type_: TimeSeriesTypes = None, type_params=None
+    ):
         """
         :param data: DataFrame with data for constructing time series
         :param type_: type of time series
@@ -67,11 +69,9 @@ class TimeSeries:
         if len(self.data.columns) == 1:
             data = self.data[self.data.columns[0]]
             return {
-                'mean': wm.calculate(data),
-                'std': Std().calculate(data),
-
+                "mean": wm.calculate(data),
+                "std": Std().calculate(data),
             }
-
 
 
 def group(ts: TimeSeries, group_window, group_fields=None, agg="mean") -> TimeSeries:
@@ -95,11 +95,11 @@ def group(ts: TimeSeries, group_window, group_fields=None, agg="mean") -> TimeSe
     if agg is not None:
         grouped_data = grouped_data.agg(agg)
     result = TimeSeries(grouped_data, TimeSeriesTypes.GROUP, ts.type_params)
-    result.update_params({'group_window': group_window})
+    result.update_params({"group_window": group_window})
     return result
 
 
-def rolling_trend(ts: TimeSeries, rolling_window, agg='mean') -> TimeSeries:
+def rolling_trend(ts: TimeSeries, rolling_window, agg="mean") -> TimeSeries:
     """
     The trend obtained by rolling smoothing
     :param ts: changed TimeSeries
@@ -110,7 +110,7 @@ def rolling_trend(ts: TimeSeries, rolling_window, agg='mean') -> TimeSeries:
     return TimeSeries(
         ts.data.rolling(rolling_window).agg(agg),
         type_=TimeSeriesTypes.ROLLING,
-        type_params=ts.update_params({'rolling_window': rolling_window})
+        type_params=ts.update_params({"rolling_window": rolling_window}),
     )
 
 
@@ -122,9 +122,7 @@ def exp1(ts: TimeSeries, alpha: float) -> TimeSeries:
     :return: TimeSeries with exponential smoothing
     """
     tts = ts.data.copy()
-    result = {
-        tts.index.name: tts.index
-    }
+    result = {tts.index.name: tts.index}
     tts = tts.to_frame(tts) if isinstance(tts, pd.Series) else tts
     for c in tts.columns:
         series = tts[c]
@@ -135,7 +133,7 @@ def exp1(ts: TimeSeries, alpha: float) -> TimeSeries:
 
     result = pd.DataFrame(result).set_index(tts.index.name).sort_index()
     result = TimeSeries(result, TimeSeriesTypes.EXP_1, ts.type_params)
-    result.update_params({'exp1_alpha': alpha})
+    result.update_params({"exp1_alpha": alpha})
     return result
 
 
@@ -151,9 +149,7 @@ def exp2(ts: TimeSeries, alpha: float, beta: float, step=None):
     tts = ts.data.copy()
     level = 0
     trend = 0
-    result = {
-        tts.index.name: list(tts.index)
-    }
+    result = {tts.index.name: list(tts.index)}
     if step:
         result[tts.index.name].append(tts.index[-1] + step)
     tts = tts.to_frame(tts) if isinstance(tts, pd.Series) else tts
@@ -171,11 +167,11 @@ def exp2(ts: TimeSeries, alpha: float, beta: float, step=None):
 
     result = pd.DataFrame(result).set_index(tts.index.name).sort_index()
     result = TimeSeries(result, TimeSeriesTypes.EXP_2, ts.type_params)
-    result.update_params({'exp2_alpha': alpha, 'exp2_beta': alpha})
+    result.update_params({"exp2_alpha": alpha, "exp2_beta": alpha})
     return result
 
 
-def diff(ts: TimeSeries, method='sequential', percent: bool = False):
+def diff(ts: TimeSeries, method="sequential", percent: bool = False):
     """
     Time series of differences
     :param ts: changed TimeSeries
@@ -185,15 +181,13 @@ def diff(ts: TimeSeries, method='sequential', percent: bool = False):
     :return: TimeSeries of differences
     """
     tts = ts.data.copy().dropna()
-    result = {
-        tts.index.name: tts.index
-    }
+    result = {tts.index.name: tts.index}
     tts = tts.to_frame(tts) if isinstance(tts, pd.Series) else tts
 
     if method == "sequential":
         for c in tts.columns:
-            tts['next'] = np.array(list(tts[c].iloc[1:].values) + [0])
-            result[c] = tts['next'] - tts[c]
+            tts["next"] = np.array(list(tts[c].iloc[1:].values) + [0])
+            result[c] = tts["next"] - tts[c]
             if percent:
                 result[c] = result[c] / tts[c] * 100
 
@@ -206,7 +200,7 @@ def diff(ts: TimeSeries, method='sequential', percent: bool = False):
         raise ValueError(f"Not valid method ({method})")
     result = pd.DataFrame(result).set_index(tts.index.name).sort_index()
     result = TimeSeries(result, TimeSeriesTypes.DIFF, ts.type_params)
-    result.update_params({'diff_method': method, 'diff_percent': percent})
+    result.update_params({"diff_method": method, "diff_percent": percent})
     return result
 
 
@@ -217,9 +211,7 @@ def linear_trend(ts: TimeSeries):
     :return: linear trend
     """
     tts = ts.data.copy()
-    result = {
-        tts.index.name: tts.index
-    }
+    result = {tts.index.name: tts.index}
     tts = tts.to_frame(tts) if isinstance(tts, pd.Series) else tts
 
     lr_function = None
@@ -227,11 +219,7 @@ def linear_trend(ts: TimeSeries):
         y = tts[c].values.reshape(1, -1)[0]
         x_is_time = isinstance(tts.index, DatetimeIndex)
         try:
-            x = (
-                [t.timestamp() for t in tts.index]
-                if x_is_time
-                else tts.index
-            )
+            x = [t.timestamp() for t in tts.index] if x_is_time else tts.index
             lr_function = np.poly1d(np.polyfit(x, y, 1))
         except:
             x = range(len(tts))
@@ -241,21 +229,21 @@ def linear_trend(ts: TimeSeries):
 
     result = pd.DataFrame(result).set_index(tts.index.name).sort_index()
     result = TimeSeries(result, TimeSeriesTypes.DIFF, ts.type_params)
-    result.update_params({'lr_function': lr_function})
+    result.update_params({"lr_function": lr_function})
     return result
 
 
 def plot(
-        ts: Union[TimeSeries, List[TimeSeries]],
-        figsize: Tuple[int, int] = (15, 5),
-        title: str = None,
-        legend=None,
-        xticks=None,
-        yticks=None,
-        xlabel=None,
-        ylabel=None,
-        save_directory=None,
-        show=True
+    ts: Union[TimeSeries, List[TimeSeries]],
+    figsize: Tuple[int, int] = (15, 5),
+    title: str = None,
+    legend=None,
+    xticks=None,
+    yticks=None,
+    xlabel=None,
+    ylabel=None,
+    save_directory=None,
+    show=True,
 ):
     plt.figure(figsize=figsize)
     ts = [ts] if isinstance(ts, TimeSeries) else ts
@@ -292,7 +280,7 @@ if __name__ == "__main__":
     )
     # Indexed data
     ts = TimeSeries(data)
-    ts.set_index('time')
+    ts.set_index("time")
     plot(ts, title="Indexed data")
     # Grouped data
     gts = group(ts, "30d")
@@ -318,4 +306,8 @@ if __name__ == "__main__":
     edts = diff(rts, "end", True)
     plot(edts, title="End diff of rolling data")
     ledrs = linear_trend(edts)
-    plot([edts, ledrs], legend=['edts', 'ledrs'], title="Linear trend of end dif of rolling data")
+    plot(
+        [edts, ledrs],
+        legend=["edts", "ledrs"],
+        title="Linear trend of end dif of rolling data",
+    )
