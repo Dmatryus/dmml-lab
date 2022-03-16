@@ -6,8 +6,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union, Dict, Tuple, List
 import pandas as pd
+from collections import OrderedDict
 
 import pymysql
+import re
 
 from data.dict_driver import value_key_convert, DeepPath
 
@@ -66,7 +68,7 @@ class SqlConfig(JsonStoredConfig):
         )
 
     def __init__(
-            self, driver_config: DriverConfig = None, query_config: QueryConfig = None
+        self, driver_config: DriverConfig = None, query_config: QueryConfig = None
     ):
         self.driver_config = driver_config
         self.query_config = query_config
@@ -76,7 +78,7 @@ class SqlLoader:
     config: SqlConfig
 
     def __init__(
-            self, config: SqlConfig = None, path_to_config: Union[Path, str] = None
+        self, config: SqlConfig = None, path_to_config: Union[Path, str] = None
     ):
         self.config = config
         if not self.config and path_to_config:
@@ -99,33 +101,97 @@ class SqlLoader:
             connect.close()
         return data
 
-    def build_query(self, fields: List[str] = None, conditions: List[str] = None):
+    def build_query(
+        self, fields: List[str] = None, conditions: List[str] = None, limit=None
+    ):
+        def find_shorts_in_values(values):
+            r = []
+            for v in values:
+                r += [s[: s.find(".")] for s in re.findall(r"\w+\.\w+", v)]
+            return dict.fromkeys(r)
+
         def build_fields():
             if not fields:
                 return "*"
             else:
-                return "\n\t".join(
-                    [
-                        f"{self.config.query_config.fields_mapping[f]} {f}"
-                        for f in fields
-                    ]
+                return ",\n\t".join(
+                    [f"{query_config.fields_mapping[f]} {f}" for f in fields]
                 )
 
         def build_tables():
-            table_shorts = value_key_convert(
-                self.config.query_config.tables, DeepPath(("short",)), flatten=True
+            def get_join(table):
+                print(current_tables_in_query)
+                for parent_table in current_tables_in_query:
+                    if table in query_config.tables[parent_table]["joines"]:
+                        result = ""
+                        if query_config.tables[parent_table]["joines"][table][0] == "+":
+                            result = get_join(
+                                query_config.tables[parent_table]["joines"][table][1:]
+                            )
+                        current_tables_in_query[table] = None
+                        return (
+                            result
+                            + f'\n\tleft join {table} {query_config.tables[table]["short"]} on {query_config.tables[parent_table]["joines"][table] if not result else query_config.tables[table]["joines"][query_config.tables[parent_table]["joines"][table][1:]]}'
+                        )
+
+            t_fields = (
+                dict.fromkeys([query_config.fields_mapping[f] for f in fields])
+                if fields
+                else None
             )
-            tables_in_query = {table_shorts[f[: f.find(".")]] for f in fields}
+            table_shorts = value_key_convert(
+                query_config.tables, DeepPath(("short",)), flatten=True
+            )
+            current_shorts = (
+                find_shorts_in_values(t_fields) if t_fields else table_shorts
+            )
+            all_tables_in_query = list(
+                OrderedDict.fromkeys([table_shorts[f] for f in current_shorts])
+            )
 
             result = "from "
-            for i, table in enumerate(tables_in_query):
+            current_tables_in_query = {}
+            for i, table in enumerate(all_tables_in_query):
                 short_path = DeepPath((table, "short"))
                 if i == 0:
-                    result += f"{table} {short_path.get_from_dict(self.config.query_config.tables)}"
+                    result += f"{table} {short_path.get_from_dict(query_config.tables)}"
+                    current_tables_in_query[table] = None
                 else:
-                    for t in tables_in_query[:i]:
-                        if table in t['joines']:
-                            result += t['joines'][table]
+                    join = get_join(table)
+                    if join:
+                        result += join
             return result
 
-        query = "select " + build_fields() + '\n' + build_tables()
+        def build_conditions():
+            def replace_field(condition):
+                result = []
+                broken = condition.split(" ")
+                for p in broken:
+                    if p in query_config.fields_mapping:
+                        result.append(query_config.fields_mapping[p])
+                    else:
+                        result.append(p)
+                return " ".join(result)
+
+            r = ""
+            t_conditions = [replace_field(c) for c in conditions]
+
+            if t_conditions:
+                r = f"\nwhere {t_conditions[0]}" + (
+                    ("\n\tand " + "\n\tand".join(t_conditions[1:]))
+                    if len(t_conditions) > 1
+                    else ""
+                )
+            if limit:
+                r += f"\nlimit {limit}"
+            return r
+
+        query_config = self.config.query_config
+        return (
+            "select "
+            + build_fields()
+            + "\n"
+            + build_tables()
+            + build_conditions()
+            + ";"
+        )

@@ -1,9 +1,9 @@
 {
   "driver_config": {
     "driver": "MySQL",
-    "host": "host",
-    "user": "user",
-    "password": "password"
+    "host": "proxysql-prod.srg-it.ru",
+    "user": "ro_dev",
+    "password": "oobeeN9g"
   },
   "query_config": {
     "fields_mapping": {
@@ -47,24 +47,69 @@
       "request_for_valuation": {
         "short": "rfv",
         "joines": {
-          "residential_property": "JOIN residential_property rp on rp.id = rfv.realty_id",
-          "valuation_result": "LEFT JOIN valuation_result vr on vr.id = rfv.id",
-          "income_report": "LEFT JOIN income_report ir on ir.valuation_request_id = rfv.id",
-          "company": "JOIN company comp on comp.id = rfv.company_id",
-          "expert_request": "left join expert_request erq on erq.id = rfv.id"
+          "residential_property": "rp.id = rfv.realty_id",
+          "valuation_result": "vr.id = rfv.id",
+          "income_report": "ir.valuation_request_id = rfv.id",
+          "company": "comp.id = rfv.company_id",
+          "expert_request": "erq.id = rfv.id",
+          "expert_response": "+expert_request"
         }
       },
       "residential_property": {
         "short": "rp",
         "joines": {
-          "city": "JOIN city c on c.fias_id = rp.city_fiasId",
-          "street": "JOIN street s on s.fias_id = rp.street_fiasId"
+          "city": "c.fias_id = rp.city_fiasId",
+          "street": "s.fias_id = rp.street_fiasId"
         }
       },
       "expert_request": {
         "short": "erq",
         "joines": {
-          "expert_response": "left join expert_response eresp on eresp.id = erq.expert_response_id"
+          "request_for_valuation": "erq.id = rfv.id",
+          "expert_response": "eresp.id = erq.expert_response_id"
+        }
+      },
+      "valuation_result": {
+        "short": "vr",
+        "joines": {
+          "request_for_valuation": "vr.id = rfv.id"
+        }
+      },
+      "company": {
+        "short": "comp",
+        "joines": {
+          "request_for_valuation": "comp.id = rfv.company_id"
+        }
+      },
+      "expert_response": {
+        "short": "eresp",
+        "joines": {
+          "expert_request": "eresp.id = erq.expert_response_id"
+        }
+      },
+      "city": {
+        "short": "c",
+        "joines": {
+          "residential_property": "c.fias_id = rp.city_fiasId",
+          "region": "r.fias_id = c.region_fiasId"
+        }
+      },
+      "street": {
+        "short": "s",
+        "joines": {
+          "residential_property": "s.fias_id = rp.street_fiasId"
+        }
+      },
+      "region": {
+        "short": "r",
+        "joines": {
+          "city": "r.fias_id = c.region_fiasId"
+        }
+      },
+      "income_report": {
+        "short": "ir",
+        "joines": {
+          "residential_property": "ir.valuation_request_id = rfv.id"
         }
       }
     }
