@@ -101,6 +101,7 @@ class SqlLoader:
             connect.close()
         return data
 
+    ## TODO: refactor
     def build_query(
         self, fields: List[str] = None, conditions: List[str] = None, limit=None
     ):
@@ -111,27 +112,32 @@ class SqlLoader:
             return dict.fromkeys(r)
 
         def build_fields():
-            if not fields:
-                return "*"
-            else:
-                return ",\n\t".join(
-                    [f"{query_config.fields_mapping[f]} {f}" for f in fields]
-                )
+            return (
+                ",\n\t".join([f"{query_config.fields_mapping[f]} {f}" for f in fields])
+                if fields
+                else "*"
+            )
 
         def build_tables():
             def get_join(table):
                 print(current_tables_in_query)
+                loaded_table = query_config.tables[table]
                 for parent_table in current_tables_in_query:
-                    if table in query_config.tables[parent_table]["joines"]:
+                    loaded_parent = query_config.tables[parent_table]
+                    if table in loaded_parent["joines"]:
                         result = ""
-                        if query_config.tables[parent_table]["joines"][table][0] == "+":
-                            result = get_join(
-                                query_config.tables[parent_table]["joines"][table][1:]
-                            )
+                        if loaded_parent["joines"][table][0] == "+":
+                            result = get_join(loaded_parent["joines"][table][1:])
                         current_tables_in_query[table] = None
+                        join_on = (
+                            loaded_table["joines"][loaded_parent["joines"][table][1:]]
+                            if result
+                            else loaded_parent["joines"][table]
+                        )
                         return (
                             result
-                            + f'\n\tleft join {table} {query_config.tables[table]["short"]} on {query_config.tables[parent_table]["joines"][table] if not result else query_config.tables[table]["joines"][query_config.tables[parent_table]["joines"][table][1:]]}'
+                            + f"\n\tleft join {table} {loaded_table['short']} "
+                            + f"on {join_on}"
                         )
 
             t_fields = (
