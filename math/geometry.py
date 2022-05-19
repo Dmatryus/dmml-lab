@@ -1,4 +1,5 @@
 import copy
+from itertools import permutations, product, combinations
 from typing import Collection, List
 from abc import ABC, abstractmethod
 
@@ -209,21 +210,39 @@ class PointSet(Geometry):
         norm, shift, scale = self.normalization()
         return simplex.denormalization(shift, scale)
 
+    def circumscribe_hypercube(self):
+        return self._init_from_tensor(
+            np.array(list(product(*list(np.array([list(ps.min_point()), list(ps.max_point())]).T))))
+        )
+
 
 if __name__ == "__main__":
     from matplotlib import pyplot
+
     from mpl_toolkits.mplot3d import Axes3D
 
     fig = pyplot.figure()
-    ax = Axes3D(fig)
+    # ax3d = Axes3D(fig)
+    ax = pyplot.subplot()
 
-    p = Point([1, -2, 3])
+    p = Point([1, -2])
     ps = PointSet([p, p + 1, p * 2, p * 3, p * -3, p - 7])
-    simplex = ps.circumscribe_simplex()
+    hypercube = ps.circumscribe_hypercube()
+    # print(ps.min_point(), ps.max_point())
+    #
+    # t = np.array([list(ps.min_point()), list(ps.max_point())]).T
+    # print(t)
+    # stack = np.array(list(product(*list(t))))
+    #
+    # print(stack)
+    # print(stack.shape)
 
-    print(simplex)
+    print(hypercube)
 
-    ax.scatter(simplex.tensor.T[0], simplex.tensor.T[1], simplex.tensor.T[2])
-    ax.scatter(ps.tensor.T[0], ps.tensor.T[1], ps.tensor.T[2], alpha=0.5)
+    # ax3d.scatter(hypercube.tensor.T[0], hypercube.tensor.T[1], hypercube.tensor.T[2])
+    # ax3d.scatter(ps.tensor.T[0], ps.tensor.T[1], ps.tensor.T[2], alpha=0.5)
+
+    ax.scatter(hypercube.tensor.T[0], hypercube.tensor.T[1])
+    ax.scatter(ps.tensor.T[0], ps.tensor.T[1], alpha=0.4)
 
     pyplot.show()
