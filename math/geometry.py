@@ -203,17 +203,19 @@ class PointSet(Geometry):
     def denormalization(self, zero_shift, normalization_scale):
         return (self * normalization_scale) + zero_shift
 
-    def circumscribe_simplex(self):
-        simplex = self._init_from_tensor(
-            np.vstack((np.zeros(self.dimension), np.eye(self.dimension) * 2))
-        )
-        norm, shift, scale = self.normalization()
-        return simplex.denormalization(shift, scale)
-
-    def circumscribe_hypercube(self):
-        return self._init_from_tensor(
-            np.array(list(product(*list(np.array([list(ps.min_point()), list(ps.max_point())]).T))))
-        )
+    def circumscribe_figure(self, figure="simplex"):
+        if figure == "simplex":
+            form = self._init_from_tensor(
+                np.vstack((np.zeros(self.dimension), np.eye(self.dimension) * 2))
+            )
+            norm, shift, scale = self.normalization()
+            return form.denormalization(shift, scale)
+        if figure == "parallelepiped":
+            return self._init_from_tensor(
+                np.array(list(product(*list(np.array([list(ps.min_point()), list(ps.max_point())]).T))))
+            )
+        FIGURES = ["simplex", "parallelepiped"]
+        raise ValueError(f"Figure {figure} is not defined. Use: {FIGURES}")
 
 
 if __name__ == "__main__":
