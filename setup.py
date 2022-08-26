@@ -1,12 +1,13 @@
+import pathlib
 from setuptools import setup, find_packages
 from os.path import join, dirname
 
 try:
-    with open(join(dirname(__file__), "readme.md")) as fh:
-        long_description = fh.read()
+    long_description = pathlib.Path(join(dirname(__file__), "readme.md")).read_text()
+
 except:
     long_description = (
-        "Convinient statistical description of dataframes and time series."
+        "A library for creating machine learning pipelines."
     )
 
 setup(
@@ -20,6 +21,6 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://gitlab.com/dmatryus.sqrt49/dmml-lab",
-    keywords=["STATICS", "TIME_SERIES"],
+    keywords=["STATICS", "TIME_SERIES", "MACHINE_LEARNING"],
     install_requires=["numpy", "scipy", "pandas", "matplotlib", "pymysql"],
 )
