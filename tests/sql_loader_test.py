@@ -16,7 +16,7 @@ def init_by_path():
 
 def query_build(loader: SqlLoader):
     print(loader.build_query(limit=10))
-    print(loader.build_query(['city_title'], conditions=['city_id < 100']))
+    print(loader.build_query(["city_title"], conditions=["city_id < 100"]))
     print(
         loader.build_query(
             [

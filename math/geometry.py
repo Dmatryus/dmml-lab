@@ -212,7 +212,13 @@ class PointSet(Geometry):
 
     def circumscribe_hypercube(self):
         return self._init_from_tensor(
-            np.array(list(product(*list(np.array([list(ps.min_point()), list(ps.max_point())]).T))))
+            np.array(
+                list(
+                    product(
+                        *list(np.array([list(ps.min_point()), list(ps.max_point())]).T)
+                    )
+                )
+            )
         )
 
 

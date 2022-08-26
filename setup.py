@@ -6,9 +6,7 @@ try:
     long_description = pathlib.Path(join(dirname(__file__), "readme.md")).read_text()
 
 except:
-    long_description = (
-        "A library for creating machine learning pipelines."
-    )
+    long_description = "A library for creating machine learning pipelines."
 
 setup(
     name="dmml-lab",

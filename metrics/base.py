@@ -37,7 +37,9 @@ class NormalizedMetric(Metric):
 
 
 class NumCategoryMetric(NormalizedMetric):
-    def __init__(self, evaluated_field=None, compared_field=None, categories: Tuple = None):
+    def __init__(
+        self, evaluated_field=None, compared_field=None, categories: Tuple = None
+    ):
         super().__init__(evaluated_field, compared_field)
         self.categories = categories
 
@@ -45,7 +47,10 @@ class NumCategoryMetric(NormalizedMetric):
         if value < self.categories[0][0]:
             return 0
 
-        return next((i + 1 for i, c in enumerate(self.categories) if c[0] <= value < c[1]), len(self.categories) + 1)
+        return next(
+            (i + 1 for i, c in enumerate(self.categories) if c[0] <= value < c[1]),
+            len(self.categories) + 1,
+        )
 
     def calculate(self, row: pd.Series):
         try:
@@ -65,15 +70,15 @@ class MatrixMetric(Metric):
     def get_matrix_by_values(values=None, names: Tuple = None):
         return pd.DataFrame(data=values, columns=names, index=names)
 
-    def __init__(self, evaluated_field=None, compared_field=None, matrix: pd.DataFrame = None):
+    def __init__(
+        self, evaluated_field=None, compared_field=None, matrix: pd.DataFrame = None
+    ):
         super().__init__(evaluated_field, compared_field)
         self.matrix = matrix
 
     def calculate(self, row: pd.Series):
         try:
-            return self.matrix.loc[
-                row[self.evaluated_field], row[self.compared_field]
-            ]
+            return self.matrix.loc[row[self.evaluated_field], row[self.compared_field]]
         except:
             return
 
@@ -82,8 +87,14 @@ class MatrixMetric(Metric):
 
 
 class NumDifferentMetric(NumCategoryMetric):
-    def __init__(self, evaluated_field=None, compared_field=None, categories: Tuple = None, percent: bool = True,
-                 absolute=True):
+    def __init__(
+        self,
+        evaluated_field=None,
+        compared_field=None,
+        categories: Tuple = None,
+        percent: bool = True,
+        absolute=True,
+    ):
         super().__init__(evaluated_field, compared_field, categories)
         self.percent = percent
         self.absolute = absolute
