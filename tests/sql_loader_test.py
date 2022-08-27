@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).absolute().parent.parent))
 
-from data.db_load import SqlLoader
+from lib.data.db_load import SqlLoader
 
 
 def init_by_path():

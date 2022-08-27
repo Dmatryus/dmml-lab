@@ -1,0 +1,15 @@
+digraph pipeline{
+
+    subgraph components{
+        subgraph stages{
+            node[shape=cds]
+
+            collect
+        }
+
+    }
+
+    subgraph collect_cluster{
+
+    }
+}

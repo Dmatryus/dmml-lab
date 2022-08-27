@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn import metrics
 
-from ml.clustering import Clustering, DBSCAN, SimplexBlackHole, Hierarchical
+from lib.ml.clustering import Clustering, DBSCAN, SimplexBlackHole, Hierarchical
 from pathlib import Path
 
 

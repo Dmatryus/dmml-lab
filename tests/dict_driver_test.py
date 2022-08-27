@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).absolute().parent.parent))
 
-from data.dict_driver import value_key_convert, DeepPath
+from lib.data.dict_driver import value_key_convert, DeepPath
 
 
 def test_value_key_convert():
