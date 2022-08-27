@@ -1,15 +1,14 @@
-digraph pipeline{
+digraph pipeline {
 
-    subgraph components{
-        subgraph stages{
-            node[shape=cds]
+    subgraph entities {
+        node [shape = tripleoctagon]
 
-            collect
-        }
-
+        data [label = "Данные"]
     }
 
-    subgraph collect_cluster{
+    subgraph cluster_data {
+        data_quality [shape = record, label = "{Качество}|{Полнота|Уникальность|Допустимость|Актуальность}"]
 
+        data -> data_quality
     }
 }
