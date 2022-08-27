@@ -23,15 +23,15 @@ class CheckDf(CheckMetric):
     ):
         super().__init__(name)
         self.columns = columns
-        self.func = func
+        self._func = func
 
-    def check_func(self, values: pd.DataFrame, column: Union[str, List[str]]):
-        return self.func is None
+    def check_func(self, values: pd.DataFrame, column: Union[str, List[str]]) -> bool:
+        return self._func is None
 
     def check(self, values: pd.DataFrame) -> bool:
         columns = self.columns or values.columns
-        if self.func is not None:
-            return all(self.func(values, c) for c in columns)
+        if self._func is not None:
+            return all(self._func(values, c) for c in columns)
         else:
             return all(self.check_func(values, c) for c in columns)
 
@@ -87,16 +87,16 @@ class FixDf(FixMethod):
         self, columns: Iterable[Union[str, List[str]]] = None, func: Callable = None
     ):
         self.columns = columns
-        self.func = func
+        self._func = func
 
     def fix_func(
         self, values: pd.DataFrame, columns: Union[str, List[str]]
     ) -> pd.DataFrame:
-        return self.func(values, columns) if self.func is not None else values
+        return self._func(values, columns) if self._func is not None else values
 
     def fix(self, values: pd.DataFrame) -> pd.DataFrame:
         columns = self.columns or values.columns
-        return self.func(values, columns)
+        return self._func(values, columns)
 
 
 class FixByDropNA(FixDf):
