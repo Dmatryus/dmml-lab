@@ -20,5 +20,5 @@ setup(
     long_description_content_type="text/markdown",
     url="https://gitlab.com/dmatryus.sqrt49/dmml-lab",
     keywords=["STATICS", "TIME_SERIES", "MACHINE_LEARNING"],
-    install_requires=["scipy", "pandas", "matplotlib", "pymysql", "tqdm"],
+    install_requires=["scipy", "pandas", "matplotlib", "pymysql", "tqdm", "torch", "torchvision"],
 )
