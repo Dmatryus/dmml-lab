@@ -1,4 +1,5 @@
 import pickle
+import warnings
 from pathlib import Path
 from typing import Callable
 
@@ -20,8 +21,7 @@ class NN:
         if self.init_function:
             self.model.apply(self.init_function)
         else:
-            # TODO: warning
-            pass
+            warnings.warn("Init function is None. Weights was not init.")
 
 
 class GanProcessor:
