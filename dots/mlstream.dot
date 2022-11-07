@@ -1,0 +1,23 @@
+digraph {
+    subgraph processes{
+        node[shape=box]
+
+        load_data
+        extract_data
+        generate_data
+        data_analyse
+    }
+
+    subgraph objects{
+        node[shape=septagon]
+
+        Data
+        DataAnalysis
+    }
+
+    {
+        load_data
+        extract_data
+        generate_data
+    } -> Data -> data_analyse -> DataAnalysis
+}
