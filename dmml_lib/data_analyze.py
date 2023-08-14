@@ -2,18 +2,22 @@ from typing import List, Dict
 
 import pandas as pd
 
-from pipeline import Pipeline, Pipe
+try:
+    from .pipeline import Pipeline, Pipe
+except:
+    from pipeline import Pipeline, Pipe
 
 
 class NAAnalysis(Pipe):
     def __init__(self):
         super().__init__("NAAnalysis")
 
-    def fill(self, data) -> Dict[str, pd.DataFrame]:
+    def fill(self, input_stream: Dict) -> Dict[str, pd.DataFrame]:
+        data = input_stream["data"]
         return {
             self.name: pd.DataFrame(
-                [data.value_counts(), data.value_counts(normalize=True)]
-            )
+                [data.isna().sum(), data.isna().sum()/len(data)*100], index=["Absolute", "Percent"]
+            ).T
         }
 
 
