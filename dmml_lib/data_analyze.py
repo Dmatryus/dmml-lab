@@ -3,26 +3,25 @@ from typing import List, Dict
 import pandas as pd
 
 try:
-    from .pipeline import Pipeline, Pipe
+    from .pipeline import Pipeline, Executor
 except:
-    from pipeline import Pipeline, Pipe
+    from pipeline import Pipeline, Executor
 
 
-class NAAnalysis(Pipe):
-    def __init__(self):
-        super().__init__("NAAnalysis")
+class NAAnalysis(Executor):
+    def __init__(self, parent_pipeline: Pipeline = None):
+        super().__init__("NAAnalysis", parent_pipeline)
 
-    def execute(self, input_stream: Dict) -> Dict[str, pd.DataFrame]:
-        data = input_stream["data"]
+    def execute(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         return pd.DataFrame(
             [data.isna().sum(), data.isna().sum() / len(data) * 100],
             index=["absolute", "percent"],
         ).T
 
 
-class FeatureTypeAnalysis(Pipe):
-    def __init__(self, dropna: bool = True, analyzing_columns=None):
-        super().__init__("TypeAnalysis")
+class FeatureTypeAnalysis(Executor):
+    def __init__(self, parent_pipeline: Pipeline = None, dropna: bool = True, analyzing_columns=None):
+        super().__init__("TypeAnalysis", parent_pipeline)
         self.dropna = dropna
         self.analyzing_columns = set(analyzing_columns) if analyzing_columns else set()
 
@@ -33,8 +32,7 @@ class FeatureTypeAnalysis(Pipe):
         self.analyzing_columns = self.analyzing_columns - set(result)
         return {c: type_name for c in result}
 
-    def execute(self, input_stream: Dict) -> Dict[str, pd.DataFrame]:
-        data = input_stream["data"]
+    def execute(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         self.analyzing_columns = (
             set(data.columns)
             if len(self.analyzing_columns) == 0
@@ -63,3 +61,11 @@ class FeatureTypeAnalysis(Pipe):
         return pd.DataFrame(
             [result, dtypes.to_dict()], index=["feature_type", "dtype"]
         ).T
+
+class CorrelationAnalysis(Executor):
+    def __init__(self, parent_pipeline: Pipeline = None, method="pearson"):
+        super().__init__("CorrelationAnalysis", parent_pipeline)
+        self.method = method
+
+    def execute(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        return pd.DataFrame(data.corr(self.method), index=data.columns, columns=data.columns)
