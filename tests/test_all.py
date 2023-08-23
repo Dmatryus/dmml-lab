@@ -7,7 +7,7 @@ import numpy as np
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from dmml_lib.data_analyze import NAAnalysis, FeatureTypeAnalysis
+import dmml_lib.data_analyze as da
 
 
 def generate_data(rows=100, columns=10, random_state=None):
@@ -18,39 +18,47 @@ def generate_data(rows=100, columns=10, random_state=None):
     return data
 
 
-def testNAAnalysis():
+def test_na_analysis():
+    # Generate data
     data = generate_data(150, 4, 7)
+
+    # Set some values to None
     data[0] = None
     data.iloc[-7:, 1] = None
     data.iloc[7, 2] = None
 
-    result = NAAnalysis().execute({"data": data})
+    # Execute NA analysis
+    result = da.NAAnalysis().execute({"data": data})
 
-    # Check full na column
+    # Check full NA column
     assert result["absolute"].iloc[0] == len(data)
     assert result["percent"].iloc[0] == 100
 
-    # Check partial na column
+    # Check partial NA column
     assert result["absolute"].iloc[1] == 7
 
-    # Check one na row
+    # Check one NA row
     assert result["absolute"].iloc[2] == 1
 
-    # Check row without na
+    # Check row without NA
     assert result["absolute"].iloc[3] == 0
     assert result["percent"].iloc[3] == 0
 
     # Check that the NA values are found
+    expected_absolute = data.iloc[:, 0].isna().sum()
+    expected_percent = expected_absolute / len(data) * 100
     assert (
-        result["absolute"].iloc[0] == data.iloc[:, 0].isna().sum()
-    ), f"Expected {data.iloc[:, 0].isna().sum()}, got {result['absolute'].iloc[0]}"
+        result["absolute"].iloc[0] == expected_absolute
+    ), f"Expected {expected_absolute}, got {result['absolute'].iloc[0]}"
     assert (
-        result["percent"].iloc[0] == data.iloc[:, 0].isna().sum() / len(data) * 100
-    ), f"Expected {data.iloc[:, 0].isna().sum() / len(data) * 100}%, got {result['percent'].iloc[0]}"
+        result["percent"].iloc[0] == expected_percent
+    ), f"Expected {expected_percent}%, got {result['percent'].iloc[0]}"
 
 
-def testFeatureTypeAnalysis():
+    # Generate data
     data = generate_data(150, 6, 7)
+
+    # Modify data
     data[0] = 7
     data[1] = 7
     data.iloc[3, 1] = None
@@ -59,12 +67,15 @@ def testFeatureTypeAnalysis():
     data.iloc[3, 3] = None
     data[4] = data[4].astype(str)
 
-    dropna_fta = FeatureTypeAnalysis()
+    # Perform feature type analysis with dropna=True
+    dropna_fta = da.FeatureTypeAnalysis()
     dropna_result = dropna_fta.execute({"data": data})
 
+    # Print dropna_result
     print(dropna_result)
 
-    no_dropna_fta = FeatureTypeAnalysis(dropna=False)
+    # Perform feature type analysis with dropna=False
+    no_dropna_fta = da.FeatureTypeAnalysis(dropna=False)
     no_dropna_result = no_dropna_fta.execute({"data": data})
     print(no_dropna_result)
 
@@ -119,27 +130,17 @@ def testFeatureTypeAnalysis():
     )
 
     # Check numerical
-    assert (
-        dropna_result["feature_type"].iloc[5] == "numerical"
-    )
-    assert (
-        no_dropna_result["feature_type"].iloc[5] == "numerical"
-    )
+    assert dropna_result["feature_type"].iloc[5] == "numerical"
+    assert no_dropna_result["feature_type"].iloc[5] == "numerical"
 
-    # result = FeatureTypeAnalysis().execute({"data": data})
+def test_corr_analysis():
+    data = generate_data(1000, 2, 7)
+    data['same'] = data.iloc[:, 0]
+    data['anti'] = data.iloc[:, 0] * -1
+    data['multi'] = data.iloc[:, 0] * 7
+    data['same str'] = data.iloc[:, 0].astype(str)
 
-    # print(result)
+    result = da.CorrelationAnalysis().execute({"data": data})
+    print(data)
 
-    # # Check that the NA values are found
-    # assert (
-    #     result["TypeAnalysis"]["absolute"].iloc[0] == data.iloc[:, 0].isna().sum()
-    # ), f"Expected {data.iloc[:, 0].isna().sum()}, got {result['TypeAnalysis']['absolute'].iloc[0]}"
-
-    # # Check that the percentage of NA values is correct
-    # assert (
-    #     result["TypeAnalysis"]["percent"].iloc[0]
-    #     == data.iloc[:, 0].isna().sum() / len(data) * 100
-    # ), f"Expected {data.iloc[:, 0].isna().sum() / len(data) * 100}%, got {result['TypeAnalysis']['percent'].iloc[0]}"
-
-
-testFeatureTypeAnalysis()
+test_corr_analysis()
