@@ -1,11 +1,13 @@
 from abc import abstractmethod
 from typing import List, Dict
 
+import pandas as pd
+
 
 class Executor:
-    def __init__(self, name, parent_pipeline: Pipeline = None):
+    def __init__(self, name, previous_executors: List = None):
         self.name = name
-        self.parent_pipeline = parent_pipeline
+        self.previous_executors = previous_executors or []
 
     @abstractmethod
     def execute(self, input_stream: Dict) -> Dict:
@@ -18,7 +20,7 @@ class Pipeline:
         for pipe in pipes:
             pipe.parent_pipeline = self
 
-    def execute(self, data):
+    def execute(self, data: pd.DataFrame) -> Dict:
         outputs = {}
         for executor in self.pipes:
             outputs.update(executor.execute(data))

@@ -1,6 +1,7 @@
-from typing import List, Dict
+from typing import List, Dict, Callable
 
 import pandas as pd
+import scipy.stats as ss
 
 try:
     from .pipeline import Pipeline, Executor
@@ -9,8 +10,10 @@ except:
 
 
 class NAAnalysis(Executor):
-    def __init__(self, parent_pipeline: Pipeline = None):
-        super().__init__("NAAnalysis", parent_pipeline)
+    def __init__(
+        self, name: str = "NAAnalysis", previous_executors: List[Executor] = None
+    ):
+        super().__init__(name, previous_executors)
 
     def execute(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         return pd.DataFrame(
@@ -20,8 +23,14 @@ class NAAnalysis(Executor):
 
 
 class FeatureTypeAnalysis(Executor):
-    def __init__(self, parent_pipeline: Pipeline = None, dropna: bool = True, analyzing_columns=None):
-        super().__init__("TypeAnalysis", parent_pipeline)
+    def __init__(
+        self,
+        name: str = "FeatureTypeAnalysis",
+        previous_executors: List[Executor] = None,
+        dropna: bool = True,
+        analyzing_columns=None,
+    ):
+        super().__init__(name, previous_executors)
         self.dropna = dropna
         self.analyzing_columns = set(analyzing_columns) if analyzing_columns else set()
 
@@ -62,10 +71,43 @@ class FeatureTypeAnalysis(Executor):
             [result, dtypes.to_dict()], index=["feature_type", "dtype"]
         ).T
 
+
 class CorrelationAnalysis(Executor):
-    def __init__(self, parent_pipeline: Pipeline = None, method="pearson"):
-        super().__init__("CorrelationAnalysis", parent_pipeline)
+    def __init__(
+        self,
+        name: str = "CorrelationAnalysis",
+        previous_executors: List[Executor] = None,
+        method="pearson",
+    ):
+        super().__init__(name, previous_executors)
         self.method = method
 
+    def calc_correlation(
+        self, data: pd.DataFrame, correlation_function: Callable, without_category: bool
+    ) -> pd.DataFrame:
+        if without_category:
+            result = pd.DataFrame(columns=data.columns, index=data.columns)
+            for x in data.columns:
+                if data[x].dtype != object:
+                    for y in data.columns:
+                        if data[y].dtype != object:
+                            result.loc[x, y] = correlation_function(data[x], data[y])[0]
+            return result
+
+        return pd.DataFrame(
+            [
+                [correlation_function(data[x], data[y])[0] for x in data.columns]
+                for y in data.columns
+            ],
+            columns=data.columns,
+            index=data.columns,
+        )
+
     def execute(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
-        return pd.DataFrame(data.corr(self.method), index=data.columns, columns=data.columns)
+        if self.method == "pearson":
+            return self.calc_correlation(data, ss.pearsonr, without_category=True)
+        if self.method == "kendall":
+            return self.calc_correlation(data, ss.kendalltau, without_category=False)
+        if self.method == "spearman":
+            return self.calc_correlation(data, ss.spearmanr, without_category=False)
+
