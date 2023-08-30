@@ -2,6 +2,7 @@ from typing import List, Dict, Callable
 
 import pandas as pd
 import scipy.stats as ss
+from stat_box.statistic import Statistics, DEFAULT_STATISTICS
 
 try:
     from .pipeline import Pipeline, Executor
@@ -111,3 +112,13 @@ class CorrelationAnalysis(Executor):
         if self.method == "spearman":
             return self.calc_correlation(data, ss.spearmanr, without_category=False)
 
+
+class StatBoxAnalysis(Executor):
+    def __init__(
+        self, name: str = "StatBoxAnalysis", previous_executors: List[Executor] = None, statistics: Statistics = None
+    ):
+        super().__init__(name, previous_executors)
+        self.statistics = statistics or DEFAULT_STATISTICS
+
+    def execute(self, data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        return self.statistics.stat_table(data)

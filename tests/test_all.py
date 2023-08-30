@@ -21,9 +21,7 @@ def generate_data(rows=100, columns=10, random_state=None):
 
     np.random.seed(random_state)
 
-    data = pd.DataFrame(np.random.rand(rows, columns), columns=range(columns))
-
-    return data
+    return pd.DataFrame(np.random.rand(rows, columns), columns=range(columns))
 
 
 def test_na_analysis():
@@ -198,4 +196,7 @@ def test_correlation_analysis():
     corr_test(spearman, True)
 
 
-test_correlation_analysis()
+def test_statbox_analysis():
+    data = generate_data(100, 4, 7)
+    default_stats = da.StatBoxAnalysis().execute(data)
+    assert len(data.columns) == 4
