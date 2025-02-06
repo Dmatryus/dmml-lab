@@ -1,6 +1,8 @@
-from typing import List, Optional, Literal
+from pathlib import Path
+from typing import List, Optional, Literal, Union, Dict, Any
 
 import pandas as pd
+from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 
 
@@ -19,21 +21,82 @@ class ModelData:
         index_sets (Dict[str, List]): Dictionary storing train, test, and validation indices.
     """
 
+    @staticmethod
+    def default_index_set(data: pd.DataFrame) -> dict:
+        """Generate default train, test, and validation indices.
+
+        Args:
+            data (pd.DataFrame): The input data for which to generate indices.
+
+        Returns:
+            dict: A dictionary containing three keys: 'train', 'test', and 'valid', each associated with a list of indices.
+        """
+        return {"train": list(data.index), "test": [], "valid": []}
+
     def __init__(
-        self, data: pd.DataFrame, features: List[str], target: Optional[str] = None
+        self,
+        data: Union[pd.DataFrame, Path, str],
+        features: List[str],
+        target: Optional[str] = None,
+        read_kwargs: Dict[str, Any] = None,
     ):
+        """
+        Initialize the Dataset class.
+
+        Parameters:
+        data (Union[pd.DataFrame, Path, str]): The data source, which can be a pandas DataFrame,
+            a file path (str or Path) to a CSV or Parquet file, or a string representing the file path.
+        features (List[str]): A list of column names representing the features in the dataset.
+        target (Optional[str]): The name of the target column in the dataset. Defaults to None if
+            the dataset is used for unsupervised learning or feature engineering.
+        read_kwargs (Dict[str, Any]): Additional keyword arguments to be passed to the file reading
+            functions (pd.read_csv or pd.read_parquet). Defaults to an empty dictionary.
+
+        Raises:
+        ValueError: If the file format is not supported (only CSV and Parquet are supported).
+        """
+        data = Path(data) if isinstance(data, str) else data
+        if isinstance(data, Path):
+            if read_kwargs is None:
+                read_kwargs = {}
+            if data.suffix == ".csv":
+                data = pd.read_csv(data, **read_kwargs)
+            elif data.suffix == ".parquet":
+                data = pd.read_parquet(data, **read_kwargs)
+            else:
+                raise ValueError(
+                    "Unsupported file format. Only CSV and Parquet are supported."
+                )
         self.data = data
         self.features = features
-        self.target = target
-        self.index_sets = {"train": list(data.index), "test": [], "valid": []}
+        self.target: Optional[str] = target
+        self.index_sets = self.default_index_set(self.data)
 
-    def split_data(self, test_size: float, valid_size: float = 0):
+    @classmethod
+    def load_california_housing_data(cls):
+        """Load California housing data and initialize dataset attributes.
+
+        This method fetches the California housing dataset, concatenates the features and target into a single DataFrame,
+        sets the features and target attributes, and generates default train, test, and validation indices.
+
+        Returns:
+            Dataset: The initialized dataset object with the loaded data.
+        """
+        california_housing = fetch_california_housing(as_frame=True)
+        data = pd.concat([california_housing.data, california_housing.target], axis=1)
+        features = california_housing.feature_names
+        target = california_housing.target.name
+        return cls(data, features, target)
+
+    def split_data(self, test_size: float = 0, valid_size: float = 0):
         """Split the dataset into train, test, and optionally validation sets.
 
         Args:
             test_size (float): Proportion of the dataset to include in the test split.
             valid_size (float): Proportion of the dataset to include in the validation split.
         """
+        if test_size == 0 and valid_size == 0:
+            self.index_sets = self.default_index_set(self.data)
         self.index_sets["train"], self.index_sets["test"] = train_test_split(
             list(self.data.index), test_size=test_size
         )
@@ -72,3 +135,15 @@ class ModelData:
             return None if self.target is None else self.data.loc[indexes, self.target]
         else:
             raise ValueError("Invalid fields_set value or target is None.")
+
+    def __str__(self):
+        return self.data.__str__()
+
+    def __repr__(self):
+        return self.data.__repr__()
+
+    def _repr_html_(self):
+        return self.data._repr_html_()
+
+    def __len__(self):
+        return len(self.data)
