@@ -42,7 +42,9 @@ class QuantileTailClipper:
         if self.contamination:
             self.upper_quantile = 1 - self.contamination
 
-            for i in np.arange(0, self.contamination + self.learning_rate, self.learning_rate):
+            for i in np.arange(
+                0, self.contamination + self.learning_rate, self.learning_rate
+            ):
                 i_lower_quantile = self.lower_quantile + i
                 i_upper_quantile = self.upper_quantile + i
                 diff = self._calculate_diff(x, i_lower_quantile, i_upper_quantile)
@@ -64,7 +66,13 @@ class QuantileTailClipper:
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         x = pd.Series(X.flatten())
-        r = (((x >= x.quantile(self.lower_quantile)) & (x <= x.quantile(self.upper_quantile))) * 1).replace({0: -1})
+        r = (
+            (
+                (x >= x.quantile(self.lower_quantile))
+                & (x <= x.quantile(self.upper_quantile))
+            )
+            * 1
+        ).replace({0: -1})
         return r.values
 
     def fit_predict(self, X: np.ndarray, y=None) -> np.ndarray:
