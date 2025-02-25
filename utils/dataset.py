@@ -136,6 +136,38 @@ class ModelData:
         else:
             raise ValueError("Invalid fields_set value or target is None.")
 
+    def encode_categoricals(
+        self,
+        encoder,
+        indexes_set: Literal["train", "test", "valid", "all"] = "all",
+        **kwargs
+    ):
+        """Encode categorical features using the provided encoder."""
+        categorical_features = self.get_data(
+            indexes_set=indexes_set, fields_set="features"
+        ).select_dtypes(include="object")
+        encoded_features = encoder.fit_transform(categorical_features, **kwargs)
+        self.data = self.data.drop(columns=categorical_features.columns)
+        self.data = self.data.join(encoded_features)
+        return encoder
+
+    def scale_features(
+        self, scaler, indexes_set: Literal["train", "test", "valid", "all"] = "all"
+    ):
+        scaled_data = scaler.fit_transform(self.get_data(indexes_set=indexes_set))
+        scaled_data = pd.DataFrame(
+            scaled_data,
+            columns=self.get_data(indexes_set=indexes_set).columns,
+            index=(
+                self.index_sets[indexes_set]
+                if indexes_set != "all"
+                else self.data.index
+            ),
+        )
+        self.data = self.data.drop(index=scaled_data.index)
+        self.data = pd.concat([self.data, scaled_data], axis=0).sort_index()
+        return scaler
+
     def __str__(self):
         return self.data.__str__()
 

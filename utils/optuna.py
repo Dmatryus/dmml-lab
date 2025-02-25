@@ -71,6 +71,7 @@ class OptunaProfile:
     timeout: Optional[int] = None
     n_jobs: int = -1
 
+
 class OptunaProfiler:
     """Class for performing hyperparameter optimization using Optuna.
 

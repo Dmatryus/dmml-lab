@@ -57,16 +57,24 @@ def feature_importance_plot(importances: pd.DataFrame):
     plt.title("Permutation Importances of Features")
     plt.show()
 
+
 def comparison_of_dist_by_group(data: pd.DataFrame, group_column: str, columns=None):
     columns = columns or data.columns
     columns = list(columns)
     columns.remove(group_column)
 
-    fig, axs = plt.subplots(len(columns), 1, figsize=(11*len(columns), 10))
+    fig, axs = plt.subplots(len(columns), 1, figsize=(11 * len(columns), 10))
     for i, col in enumerate(columns):
-        sns.histplot(data, x=col, ax=axs[i][0], stat="percent", kde=True, alpha = 0.5, hue=group_column)
+        sns.histplot(
+            data,
+            x=col,
+            ax=axs[i][0],
+            stat="percent",
+            kde=True,
+            alpha=0.5,
+            hue=group_column,
+        )
         axs[i][0].set_title(col)
 
     plt.legend()
     plt.show()
-

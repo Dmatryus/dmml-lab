@@ -5,7 +5,6 @@ import pandas as pd
 from scipy.stats import norm, stats
 
 
-
 def group_std(data: pd.DataFrame, target: str, group: str) -> pd.DataFrame:
     """
     Calculate the standard deviation for each group in the data.
