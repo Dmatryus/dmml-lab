@@ -140,21 +140,36 @@ class ModelData:
         self,
         encoder,
         indexes_set: Literal["train", "test", "valid", "all"] = "all",
+        reverse=False,
         **kwargs
     ):
         """Encode categorical features using the provided encoder."""
-        categorical_features = self.get_data(
-            indexes_set=indexes_set, fields_set="features"
-        ).select_dtypes(include="object")
-        encoded_features = encoder.fit_transform(categorical_features, **kwargs)
-        self.data = self.data.drop(columns=categorical_features.columns)
-        self.data = self.data.join(encoded_features)
+        if not reverse:
+            categorical_features = self.get_data(
+                indexes_set=indexes_set, fields_set="features"
+            ).select_dtypes(include="object")
+            encoded_features = encoder.fit_transform(categorical_features, **kwargs)
+            self.data = self.data.drop(columns=categorical_features.columns)
+            self.data = self.data.join(encoded_features)
+        else:
+            self.data = encoder.inverse_transform(self.data)
         return encoder
 
     def scale_features(
-        self, scaler, indexes_set: Literal["train", "test", "valid", "all"] = "all"
+        self,
+        scaler,
+        indexes_set: Literal["train", "test", "valid", "all"] = "all",
+        reverse=False,
+        **kwargs
     ):
-        scaled_data = scaler.fit_transform(self.get_data(indexes_set=indexes_set))
+        if not reverse:
+            scaled_data = scaler.fit_transform(
+                self.get_data(indexes_set=indexes_set), **kwargs
+            )
+        else:
+            scaled_data = scaler.inverse_transform(
+                self.get_data(indexes_set=indexes_set), **kwargs
+            )
         scaled_data = pd.DataFrame(
             scaled_data,
             columns=self.get_data(indexes_set=indexes_set).columns,
