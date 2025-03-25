@@ -1,11 +1,175 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Literal
+from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
 from scipy.stats import norm, stats
 
 
-def group_std(data: pd.DataFrame, target: str, group: str) -> pd.DataFrame:
+class Metric(ABC):
+    def __init__(
+        self,
+        target_field: str,
+        mark_field: Optional[str] = None,
+        mark_type: Literal[None, "filter", "strat"] = None,
+    ):
+        self.target_field = target_field
+        self.mark_field = mark_field
+        self.mark_type = mark_type
+
+    @abstractmethod
+    def calc_function(
+        self, data: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> dict[str, float]:
+        raise NotImplementedError
+
+    def strat_calc_function(
+        self, data: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> pd.DataFrame:
+        return pd.DataFrame(
+            dict(list(data.groupby(self.mark_field).apply(self.calc_function)))
+        )
+
+    def calc(self, data: pd.DataFrame) -> pd.DataFrame:
+        if self.mark_type == "filter" and self.mark_field is not None:
+            result = self.calc_function(data)
+            result["filtered"] = self.calc_function(data[data[self.mark_field] == 1])[
+                "metric"
+            ]
+            result["diff"] = result["metric"] - result["filtered"]
+            result["relative_diff"] = result["diff"] / result["metric"]
+            return pd.DataFrame([result], index=[self.__class__.__name__])
+        if self.mark_type == "strat" and self.mark_field is not None:
+            return self.strat_calc_function(data)
+        return pd.DataFrame(self.calc_function(data))
+
+
+class Std(Metric):
+    def calc_function(
+        self, data: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> dict[str, float]:
+        return {"metric": data[self.target_field].std()}
+
+    def strat_calc_function(
+        self, data: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> pd.DataFrame:
+        # Calculate total mean
+        total_mean = data[self.target_field].mean()
+
+        # Group by strata and calculate means and variances within each stratum
+        grouped = data.groupby(self.mark_field)
+        dict_result = {
+            "mean": grouped[self.target_field].mean(),
+            "var": grouped[self.target_field].var(ddof=1),
+            "size": grouped.size(),
+        }
+
+        result = pd.DataFrame(dict_result)
+
+        result["metric"] = sum(
+            (
+                dict_result["var"][stratum]
+                + (dict_result["mean"][stratum] - total_mean) ** 2
+            )
+            * (dict_result["size"][stratum] / len(data))
+            for stratum in dict_result["mean"].index
+        )
+
+        return pd.DataFrame(dict_result)
+
+
+class DataLoss(Metric):
+    def calc_function(
+        self, df: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> dict[str, float]:
+        """
+        Calculate the data loss metric.
+        """
+        return {"metric": len(df)}
+
+
+class Mean(Metric):
+    def calc_function(
+        self, df: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> dict[str, float]:
+        """
+        Calculate the mean metric.
+        """
+        return {"metric": df[self.target_field].mean()}
+
+
+class TradeoffMetric(Metric, ABC):
+    _support_metric_classes: list[type]
+
+    def __init__(
+        self,
+        target_field: str,
+        mark_field: Optional[str] = None,
+        mark_type: Literal[None, "filter", "strat"] = None,
+        tradeoff_factor: float = 1,
+    ):
+        super().__init__(target_field, mark_field, mark_type)
+        if mark_type == "strat" or mark_type is None:
+            raise ValueError("TradeoffMetric only supports mark_type='filter'")
+        self.tradeoff_factor = tradeoff_factor
+        self._support_metrics = [
+            c(target_field, mark_field, "filter") for c in self._support_metric_classes
+        ]
+
+    @abstractmethod
+    def calc_function(
+        self, df: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> dict[str, float]:
+        raise NotImplementedError
+
+    def calc(self, data: pd.DataFrame) -> pd.DataFrame:
+        additional_metrics = pd.concat([c.calc(data) for c in self._support_metrics])
+        additional_metrics.loc[self.__class__.__name__, :] = [
+            self.calc_function(data, additional_metrics)["metric"],
+            None,
+            None,
+            None,
+        ]
+
+        return additional_metrics
+
+
+class StdDataLossTradeoff(TradeoffMetric):
+    _support_metric_classes = [Std, DataLoss]
+
+    def calc_function(
+        self, df: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> dict[str, float]:
+        return {
+            "metric": additional_metrics.loc["Std", "relative_diff"]
+            * np.power(
+                1 - additional_metrics.loc["DataLoss", "relative_diff"],
+                self.tradeoff_factor,
+            )
+        }
+
+
+class StdMeanTradeoff(TradeoffMetric):
+    _support_metric_classes = [Std, Mean]
+
+    def calc_function(
+        self, df: pd.DataFrame, additional_metrics: Optional[pd.DataFrame] = None
+    ) -> dict[str, float]:
+        return {
+            "metric": additional_metrics.loc["Std", "relative_diff"]
+            * np.power(
+                1 - additional_metrics.loc["Mean", "relative_diff"],
+                self.tradeoff_factor,
+            )
+        }
+
+
+def group_std(
+    data: pd.DataFrame,
+    target: str,
+    filter_field: Optional[str],
+    strat_field: Optional[str],
+) -> pd.DataFrame:
     """
     Calculate the standard deviation for each group in the data.
 
@@ -163,6 +327,18 @@ def data_loss(data: pd.DataFrame, group: str, filter_field: str) -> pd.DataFrame
     return data_count
 
 
+def mean_diff(data: pd.DataFrame, group: str, filter_field: str) -> pd.DataFrame:
+    orig_data_count = data.groupby(group).agg(orig_count=(group, "mean"))
+    filtered_data_count = (
+        data[data[filter_field]].groupby(group).agg(filtered_count=(group, "mean"))
+    )
+    data_count = orig_data_count.join(filtered_data_count)
+    data_count.loc["total", "orig_count"] = len(data)
+    data_count.loc["total", "filtered_count"] = len(data[data[filter_field]])
+    data_count["loss"] = 1 - data_count["filtered_count"] / data_count["orig_count"]
+    return data_count
+
+
 def ate(data: pd.DataFrame, target: str, group: str) -> float:
     """
     Calculate the Average Treatment Effect (ATE) for the given data.
@@ -210,6 +386,31 @@ def ttest(
 
 
 def std_data_loss_tradeoff(
+    data: pd.DataFrame, target: str, group: str, filter_field: str
+) -> Dict[str, Any]:
+    """
+    Calculate the tradeoff between standard deviation and data loss.
+
+    Parameters:
+    data (pd.DataFrame): The input DataFrame containing the data.
+    target (str): The column name of the target variable.
+    group (str): The column name to group the data by.
+    filter_field (str): The column name to apply the filter on.
+
+    Returns:
+    Dict[str, Any]: A dictionary containing the original standard deviation, filtered standard deviation, data loss, standard deviation ratio, and tradeoff value.
+    """
+    result = {
+        "std_original": group_std(data, target, group),
+        "std_filtered": group_std(data[data[filter_field]], target, group),
+        "data_loss": data_loss(data, group, filter_field)["loss"],
+    }
+    result["std_ratio"] = result["std_filtered"] / result["std_original"]
+    result["tradeoff"] = result["std_ratio"] * np.power(result["data_loss"] + 100, 3)
+    return result
+
+
+def std_mean_dif_tradeoff(
     data: pd.DataFrame, target: str, group: str, filter_field: str
 ) -> Dict[str, Any]:
     """

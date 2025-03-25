@@ -153,19 +153,21 @@ class ModelData:
             self.data = self.data.join(encoded_features)
         else:
             reversed_data = self.data.copy()
-            encoder_value_mapping = {v["col"]: v["mapping"] for v in encoder.ordinal_encoder.mapping}
-            
+            encoder_value_mapping = {
+                v["col"]: v["mapping"] for v in encoder.ordinal_encoder.mapping
+            }
+
             for col in encoder.cols:
                 mapping = encoder.mapping[col].to_dict()
                 value_mapping = encoder_value_mapping[col]
-                
+
                 reverse_mapping = {v: k for k, v in mapping.items()}
                 reverse_value_mapping = {v: k for k, v in value_mapping.items()}
 
                 mapped_col = self.data[col].map(reverse_mapping)
                 mapped_col = mapped_col.map(reverse_value_mapping)
                 reversed_data[col] = mapped_col
-            
+
             self.data = reversed_data
         return encoder
 
