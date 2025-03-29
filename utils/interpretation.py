@@ -1,3 +1,5 @@
+import numbers
+
 import pandas as pd
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -35,7 +37,7 @@ def etrp_importance(data: ModelData) -> pd.DataFrame:
     ).sort_values(by="importances mean", ascending=False)
 
 
-def feature_importance_plot(importances: pd.DataFrame):
+def feature_importance_plot(importances: pd.DataFrame, figsize=(15, 10)):
     """
     Plot permutation feature importances.
 
@@ -44,6 +46,7 @@ def feature_importance_plot(importances: pd.DataFrame):
     """
     importances = importances.sort_values(by="importances mean", ascending=False)
     diff = importances["importances mean"].sort_values(ascending=True).diff()
+    plt.figure(figsize=figsize)
     plt.bar(
         importances.index,
         importances["importances mean"],

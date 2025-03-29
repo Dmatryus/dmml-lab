@@ -1,9 +1,11 @@
 from pathlib import Path
-from typing import List, Optional, Literal, Union, Dict, Any
+from typing import List, Optional, Literal, Union, Dict, Any, get_args
 
 import pandas as pd
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
+
+from pandas._typing import InterpolateOptions
 
 
 class ModelData:
@@ -36,7 +38,7 @@ class ModelData:
     def __init__(
         self,
         data: Union[pd.DataFrame, Path, str],
-        features: List[str],
+        features: Optional[List[str]] = None,
         target: Optional[str] = None,
         read_kwargs: Dict[str, Any] = None,
     ):
@@ -68,8 +70,9 @@ class ModelData:
                     "Unsupported file format. Only CSV and Parquet are supported."
                 )
         self.data = data
-        self.features = features
+        self.features = features if features else self.data.columns.tolist()
         self.target: Optional[str] = target
+        self.features.remove(self.target) if self.target in self.features else None
         self.index_sets = self.default_index_set(self.data)
 
     @classmethod
@@ -105,6 +108,14 @@ class ModelData:
                 self.index_sets["train"], test_size=valid_size
             )
 
+    def get_index_set(
+        self, index_set: Literal["train", "test", "valid", "all"] = "all"
+    ) -> List:
+        if index_set == "all":
+            return list(self.data.index)
+        else:
+            return self.index_sets[index_set]
+
     def get_data(
         self,
         indexes_set: Literal["train", "test", "valid", "all"] = "all",
@@ -122,11 +133,7 @@ class ModelData:
         Raises:
             ValueError: If an invalid fields_set value is provided or if target is None.
         """
-        if indexes_set == "all":
-            indexes = list(self.data.index)
-        else:
-            indexes = self.index_sets[indexes_set]
-
+        indexes = self.get_index_set(indexes_set)
         if fields_set == "all":
             return self.data.loc[indexes, :]
         elif fields_set == "features":
@@ -135,6 +142,20 @@ class ModelData:
             return None if self.target is None else self.data.loc[indexes, self.target]
         else:
             raise ValueError("Invalid fields_set value or target is None.")
+
+    def set_data(
+        self,
+        new_data: pd.DataFrame,
+        indexes_set: Literal["train", "test", "valid", "all"] = "all",
+        fields_set: Literal["all", "features", "target"] = "all",
+    ):
+        indexes = self.get_index_set(indexes_set)
+        if fields_set == "all":
+            self.data.loc[indexes, :] = new_data
+        if fields_set == "features":
+            self.data.loc[indexes, self.features] = new_data
+        if fields_set == "target":
+            self.data.loc[indexes, self.target] = new_data.values
 
     def encode_categoricals(
         self,
@@ -198,6 +219,82 @@ class ModelData:
         self.data = self.data.drop(index=scaled_data.index)
         self.data = pd.concat([self.data, scaled_data], axis=0).sort_index()
         return scaler
+
+    def fillna(
+        self,
+        indexes_set: Literal["train", "test", "valid", "all"] = "all",
+        fields_set: Literal["all", "features", "target"] = "all",
+        method: Literal[
+            "mean",
+            "median",
+            "mode",
+            "linear",
+            "time",
+            "index",
+            "values",
+            "nearest",
+            "zero",
+            "slinear",
+            "quadratic",
+            "cubic",
+            "barycentric",
+            "polynomial",
+            "krogh",
+            "piecewise_polynomial",
+            "spline",
+            "pchip",
+            "akima",
+            "cubicspline",
+            "from_derivatives",
+            "bfill",
+            "ffill",
+        ] = "mean",
+        value=None,
+    ):
+        if value is not None:
+            self.set_data(
+                self.get_data(indexes_set, fields_set).fillna(value),
+                indexes_set,
+                fields_set,
+            )
+        if method == "bfill":
+            self.set_data(
+                self.get_data(indexes_set, fields_set).bfill(), indexes_set, fields_set
+            )
+        elif method == "ffill":
+            self.set_data(
+                self.get_data(indexes_set, fields_set).ffill(), indexes_set, fields_set
+            )
+        elif method == "mean":
+            self.set_data(
+                self.get_data(indexes_set, fields_set).apply(
+                    lambda x: x.fillna(x.mean())
+                ),
+                indexes_set,
+                fields_set,
+            )
+        elif method == "median":
+            self.set_data(
+                self.get_data(indexes_set, fields_set).apply(
+                    lambda x: x.fillna(x.median())
+                ),
+                indexes_set,
+                fields_set,
+            )
+        if method == "mode":
+            self.set_data(
+                self.get_data(indexes_set, fields_set).apply(
+                    lambda x: x.fillna(x.mode()[0])
+                ),
+                indexes_set,
+                fields_set,
+            )
+        elif method in get_args(InterpolateOptions):
+            self.set_data(
+                self.get_data(indexes_set, fields_set).interpolate(method=method),
+                indexes_set,
+                fields_set,
+            )
 
     def __str__(self):
         return self.data.__str__()
