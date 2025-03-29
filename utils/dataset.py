@@ -40,7 +40,7 @@ class ModelData:
         data: Union[pd.DataFrame, Path, str],
         features: Optional[List[str]] = None,
         target: Optional[str] = None,
-        read_kwargs: Dict[str, Any] = None,
+        read_kwargs: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize the Dataset class.
