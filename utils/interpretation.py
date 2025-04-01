@@ -9,7 +9,7 @@ from sklearn.inspection import permutation_importance
 from .dataset import ModelData
 
 
-def etrp_importance(data: ModelData) -> pd.DataFrame:
+def etrp_importance(data: ModelData, n_repeats=5, n_estimators=1000) -> pd.DataFrame:
     """
     Calculate permutation feature importance using Extra Trees Regressor.
 
@@ -20,13 +20,13 @@ def etrp_importance(data: ModelData) -> pd.DataFrame:
     pd.DataFrame: A DataFrame with feature importances, including mean and standard deviation.
     """
     # Initialize and train the model
-    model = ExtraTreesRegressor(n_estimators=1000, n_jobs=-1)
+    model = ExtraTreesRegressor(n_estimators=n_estimators, n_jobs=-1)
     model.fit(data.get_data("train", "features"), data.get_data("train", "target"))
     result = permutation_importance(
         model,
         data.get_data("test", "features"),
         data.get_data("test", "target"),
-        n_repeats=30,
+        n_repeats=n_repeats,
     )
     return pd.DataFrame(
         data={
@@ -71,13 +71,13 @@ def comparison_of_dist_by_group(data: pd.DataFrame, group_column: str, columns=N
         sns.histplot(
             data,
             x=col,
-            ax=axs[i][0],
+            ax=axs[i],
             stat="percent",
             kde=True,
             alpha=0.5,
             hue=group_column,
         )
-        axs[i][0].set_title(col)
+        axs[i].set_title(col)
 
     plt.legend()
     plt.show()

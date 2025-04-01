@@ -66,16 +66,19 @@ class Std(Metric):
 
         result = pd.DataFrame(dict_result)
 
-        result["metric"] = sum(
+        result["strat"] = np.sqrt(sum(
             (
                 dict_result["var"][stratum]
-                + (dict_result["mean"][stratum] - total_mean) ** 2
+                # + (dict_result["mean"][stratum] - total_mean) ** 2
             )
-            * (dict_result["size"][stratum] / len(data))
+            * dict_result["size"][stratum] / len(data)
             for stratum in dict_result["mean"].index
-        )
+        ))
+        result["metric"] = data[self.target_field].std(ddof=1)
+        result["diff"] = result["metric"] - result["strat"]
+        result["relative_diff"] = result["diff"]/result["metric"]
 
-        return pd.DataFrame(dict_result)
+        return result
 
 
 class DataLoss(Metric):
