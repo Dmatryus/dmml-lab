@@ -5,7 +5,8 @@ import pandas as pd
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 
-from pandas._typing import InterpolateOptions
+IndexSetType = Literal["train", "test", "valid", "all"]
+FieldsSetType = Literal["features", "target", "model", "all"]
 
 
 class ModelData:
@@ -70,7 +71,7 @@ class ModelData:
                     "Unsupported file format. Only CSV and Parquet are supported."
                 )
         self.data = data
-        self.features = features if features else self.data.columns.tolist()
+        self.features = features or self.data.columns.tolist()
         self.target: Optional[str] = target
         self.features.remove(self.target) if self.target in self.features else None
         self.index_sets = self.default_index_set(self.data)
@@ -108,9 +109,7 @@ class ModelData:
                 self.index_sets["train"], test_size=valid_size
             )
 
-    def get_index_set(
-        self, index_set: Literal["train", "test", "valid", "all"] = "all"
-    ) -> List:
+    def get_index_set(self, index_set: IndexSetType = "all") -> List:
         if index_set == "all":
             return list(self.data.index)
         else:
@@ -118,8 +117,8 @@ class ModelData:
 
     def get_data(
         self,
-        indexes_set: Literal["train", "test", "valid", "all"] = "all",
-        fields_set: Literal["all", "features", "target"] = "all",
+        indexes_set: IndexSetType = "all",
+        fields_set: FieldsSetType = "all",
     ):
         """Retrieve data based on specified indexes and fields.
 
@@ -138,6 +137,8 @@ class ModelData:
             return self.data.loc[indexes, :]
         elif fields_set == "features":
             return self.data.loc[indexes, self.features]
+        elif fields_set == "model":
+            return self.data.loc[indexes, self.features + [self.target]]
         elif fields_set == "target":
             return None if self.target is None else self.data.loc[indexes, self.target]
         else:
@@ -146,23 +147,21 @@ class ModelData:
     def set_data(
         self,
         new_data: pd.DataFrame,
-        indexes_set: Literal["train", "test", "valid", "all"] = "all",
-        fields_set: Literal["all", "features", "target"] = "all",
+        indexes_set: IndexSetType = "all",
+        fields_set: FieldsSetType = "all",
     ):
         indexes = self.get_index_set(indexes_set)
         if fields_set == "all":
             self.data.loc[indexes, :] = new_data
-        if fields_set == "features":
+        elif fields_set == "features":
             self.data.loc[indexes, self.features] = new_data
-        if fields_set == "target":
+        elif fields_set == "features_and_target":
+            self.data.loc[indexes, self.features + [self.target]] = new_data
+        elif fields_set == "target":
             self.data.loc[indexes, self.target] = new_data.values
 
-    def encode_categoricals(
-        self,
-        encoder,
-        indexes_set: Literal["train", "test", "valid", "all"] = "all",
-        reverse=False,
-        **kwargs
+    def encode_categorical(
+        self, encoder, indexes_set: IndexSetType = "all", reverse=False, **kwargs
     ):
         """Encode categorical features using the provided encoder."""
         if not reverse:
@@ -193,11 +192,7 @@ class ModelData:
         return encoder
 
     def scale_features(
-        self,
-        scaler,
-        indexes_set: Literal["train", "test", "valid", "all"] = "all",
-        reverse=False,
-        **kwargs
+        self, scaler, indexes_set: IndexSetType = "all", reverse=False, **kwargs
     ):
         if not reverse:
             scaled_data = scaler.fit_transform(
@@ -222,30 +217,12 @@ class ModelData:
 
     def fillna(
         self,
-        indexes_set: Literal["train", "test", "valid", "all"] = "all",
-        fields_set: Literal["all", "features", "target"] = "all",
+        indexes_set: IndexSetType = "all",
+        fields_set: FieldsSetType = "all",
         method: Literal[
             "mean",
             "median",
             "mode",
-            "linear",
-            "time",
-            "index",
-            "values",
-            "nearest",
-            "zero",
-            "slinear",
-            "quadratic",
-            "cubic",
-            "barycentric",
-            "polynomial",
-            "krogh",
-            "piecewise_polynomial",
-            "spline",
-            "pchip",
-            "akima",
-            "cubicspline",
-            "from_derivatives",
             "bfill",
             "ffill",
         ] = "mean",
@@ -289,7 +266,26 @@ class ModelData:
                 indexes_set,
                 fields_set,
             )
-        elif method in get_args(InterpolateOptions):
+        elif method in [
+            "linear",
+            "time",
+            "index",
+            "values",
+            "nearest",
+            "zero",
+            "slinear",
+            "quadratic",
+            "cubic",
+            "barycentric",
+            "polynomial",
+            "krogh",
+            "piecewise_polynomial",
+            "spline",
+            "pchip",
+            "akima",
+            "cubicspline",
+            "from_derivatives",
+        ]:
             self.set_data(
                 self.get_data(indexes_set, fields_set).interpolate(method=method),
                 indexes_set,
